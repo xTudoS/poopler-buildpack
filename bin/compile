@@ -1,16 +1,40 @@
-#!/bin/sh
+#!/bin/bash
+BUILD_DIR=$1
+CACHE_DIR=$2
 
-indent() {
-  sed -u 's/^/       /'
-}
+# BUILD_DIR=$BUILD_DIR/vendor/poppler
 
-echo "-----> Found a hello.txt"
+INSTALL_DIR=$BUILD_DIR/vendor/poppler
 
-# if hello.txt is empty, abort the build
-if [ ! -s $1/hello.txt ]; then
-  echo "hello.txt was empty" | indent
-  exit 1
-fi
+ENVSCRIPT=$BUILD_DIR/.profile.d/poppler.sh
 
-# replace hello with goodbye in a new file
-cat $1/hello.txt | sed -e "s/[Hh]ello/Goodbye/g" > $1/goodbye.txt
+# Single quotes since we want $HOME to be resolved at runtime, not build time.
+POPPLER_DIR='${HOME}/vendor/poppler'
+
+echo "Untarring fontconfig-2.14.0.tar.gz into ${INSTALL_DIR}"
+
+mkdir -p $INSTALL_DIR
+# mkdir -p $BUILD_DIR
+cd $CACHE_DIR
+tar -zxvf fontconfig-2.14.0.tar.gz
+
+echo "Complete!"
+
+echo "Start fontconfig  build"
+
+cd "fontconfig-${FONTCONFIG_VERSION}"
+./configure
+make
+
+echo "-----> Extracting Fontconfig binaries"
+mkdir -p $BUILD_DIR/vendor/fontconfig
+echo "cp -rf \"${CACHE_DIR}/fontconfig-2.14.0/*\" $BUILD_DIR/vendor/fontconfig"
+cp -rf "${CACHE_DIR}/fontconfig-2.14.0/" $BUILD_DIR/vendor/fontconfig
+
+echo "Complete!"
+
+
+# echo "Building runtime environment for poppler"
+# mkdir -p $BUILD_DIR/.profile.d
+# echo "export PATH=\"$POPPLER_DIR/bin:\$PATH\"" > $ENVSCRIPT
+# echo "export LD_LIBRARY_PATH=\"$POPPLER_DIR/lib:\$LD_LIBRARY_PATH\"" >> $ENVSCRIPT
